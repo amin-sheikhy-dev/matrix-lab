@@ -3,6 +3,8 @@ import { create, all } from 'mathjs';
 
 const math = create(all);
 
+const githubCodes = 'https://github.com/amin-sheikhy-dev/matrix-lab/blob/main/src/App.tsx';
+
 type Operation = 'add' | 'subtract' | 'multiply' | 'transpose' | 'det' | 'inverse';
 
 const variableNames = ['x', 'y', 'z', 'w', 'v', 'u', 't', 's'];
