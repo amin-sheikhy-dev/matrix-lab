@@ -3,8 +3,6 @@ import { create, all } from 'mathjs';
 
 const math = create(all);
 
-const githubCodes = 'https://github.com/amin-sheikhy-dev/matrix-lab/blob/main/src/App.tsx';
-
 type Operation = 'add' | 'subtract' | 'multiply' | 'transpose' | 'det' | 'inverse';
 
 const variableNames = ['x', 'y', 'z', 'w', 'v', 'u', 't', 's'];
@@ -544,6 +542,17 @@ export default function App() {
             </div>
           )}
         </section>
+
+        <div className="flex justify-center mt-8">
+          <a
+            className="inline-flex items-center justify-center rounded-xl bg-violet-600 px-8 py-4 text-lg font-semibold text-white shadow-lg shadow-violet-500/20 transition-all duration-300 hover:-translate-y-1 hover:bg-violet-700 hover:shadow-xl hover:shadow-violet-500/30 active:translate-y-0"
+            href="https://github.com/amin-sheikhy-dev/matrix-lab/blob/main/src/App.tsx"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            نمایش کدهای این پروژه
+          </a>
+        </div>
 
         <footer className="pb-4 text-center text-xs text-slate-400">Built with React, TypeScript, Tailwind CSS & Math.js</footer>
       </div>
