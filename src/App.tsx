@@ -7,6 +7,9 @@ type Operation = 'add' | 'subtract' | 'multiply' | 'transpose' | 'det' | 'invers
 
 const variableNames = ['x', 'y', 'z', 'w', 'v', 'u', 't', 's'];
 
+// Allow only valid numeric input: digits, leading minus, decimal point
+const isValidNumericInput = (val: string) => /^-?\d*\.?\d*$/.test(val);
+
 const createGrid = (rows: number, cols: number): string[][] => Array.from({ length: rows }, () => Array(cols).fill(''));
 
 const resizeGrid = (grid: string[][], rows: number, cols: number) =>
@@ -277,21 +280,22 @@ export default function App() {
 
   function renderMatrixInput(matrix: string[][], setMatrix: React.Dispatch<React.SetStateAction<string[][]>>) {
     return (
-      <div className="overflow-x-auto rounded-xl border border-slate-200 bg-slate-50 p-3">
+      <div className="overflow-x-auto rounded-xl border border-slate-200 bg-slate-50 p-3" dir="ltr">
         <div
-          className="grid gap-2"
+          className="grid gap-1.5"
           style={{
-            gridTemplateColumns: `repeat(${matrix[0]?.length ?? 1}, minmax(55px, 1fr))`,
+            gridTemplateColumns: `repeat(${matrix[0]?.length ?? 1}, minmax(48px, 1fr))`,
           }}
         >
           {matrix.map((row, i) =>
             row.map((value, j) => (
               <input
                 key={`${i}-${j}`}
-                type="number"
-                step="any"
+                type="text"
+                inputMode="decimal"
                 value={value}
                 onChange={(e) => {
+                  if (!isValidNumericInput(e.target.value)) return;
                   setMatrix((prev) => prev.map((r, ri) => r.map((v, ci) => (ri === i && ci === j ? e.target.value : v))));
                 }}
                 placeholder="0"
@@ -309,19 +313,61 @@ export default function App() {
       <label className="flex flex-col gap-1 text-sm">
         <span className="text-slate-500">{label}</span>
         <input
-          type="number"
-          min={1}
-          max={8}
+          type="text"
+          inputMode="numeric"
           value={value}
-          onChange={(e) => setValue(Math.min(8, Math.max(1, Number(e.target.value) || 1)))}
+          onChange={(e) => {
+            if (!/^\d*$/.test(e.target.value)) return;
+            setValue(Math.min(8, Math.max(1, Number(e.target.value) || 1)));
+          }}
           className={inputClass}
         />
       </label>
     );
   }
 
+  // FIX: Render matrix as an HTML table instead of <pre> to avoid RTL/LTR issues
+  function renderMatrixDisplay(matrix: number[][], augmentedSplitAt?: number) {
+    return (
+      <div dir="ltr" className="overflow-x-auto">
+        <table className="mx-auto border-collapse font-mono text-sm">
+          <tbody>
+            {matrix.map((row, i) => {
+              const isFirst = i === 0;
+              const isLast = i === matrix.length - 1;
+              const bracketLeft = isFirst ? '⎡' : isLast ? '⎣' : '⎢';
+              const bracketRight = isFirst ? '⎤' : isLast ? '⎦' : '⎥';
+              return (
+                <tr key={i}>
+                  <td className="select-none px-1 text-slate-400 text-lg leading-8">{bracketLeft}</td>
+                  {row.map((v, j) => (
+                    <>
+                      {augmentedSplitAt !== undefined && j === augmentedSplitAt && (
+                        <td key={`sep-${j}`} className="select-none px-1 text-slate-400 font-bold">
+                          │
+                        </td>
+                      )}
+                      <td
+                        key={j}
+                        className={`px-2 py-1 text-right leading-8 tabular-nums ${v < 0 ? 'text-rose-600' : ''}`}
+                        style={{ minWidth: '3.5rem' }}
+                      >
+                        {formatNumber(v)}
+                      </td>
+                    </>
+                  ))}
+                  <td className="select-none px-1 text-slate-400 text-lg leading-8">{bracketRight}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    );
+  }
+
   return (
-    <main dir="rtl" className="min-h-screen bg-slate-100 px-4 py-10 text-slate-800">
+    <main dir="rtl" className="min-h-screen bg-slate-100 px-3 sm:px-4 py-6 sm:py-10 text-slate-800">
       <div className="mx-auto max-w-4xl space-y-8">
         <header className="text-center">
           <h1 className="text-3xl font-bold text-indigo-700">وبسایت ماتریس ها</h1>
@@ -331,7 +377,7 @@ export default function App() {
 
         {/* MATRIX CALCULATOR */}
 
-        <section className="space-y-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <section className="space-y-5 rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
           <div>
             <h2 className="text-xl font-bold">۱. عملیات ماتریسی</h2>
             <p className="mt-1 text-sm text-slate-500">عملیات موردنظر خود را انتخاب کنید.</p>
@@ -396,7 +442,7 @@ export default function App() {
           {scalarResult !== null && (
             <div className="rounded-xl bg-indigo-50 p-4">
               <h3 className="font-semibold text-indigo-800">نتیجه دترمینان</h3>
-              <p dir="ltr" className="mt-3 text-center text-2xl font-bold">
+              <p dir="ltr" className="mt-3 text-center text-2xl font-bold tabular-nums">
                 {formatNumber(scalarResult)}
               </p>
             </div>
@@ -404,17 +450,15 @@ export default function App() {
 
           {matrixResult && (
             <div className="rounded-xl bg-indigo-50 p-4">
-              <h3 className="font-semibold text-indigo-800">ماتریس نتیجه</h3>
-              <pre dir="ltr" className="mt-4 overflow-x-auto text-center text-sm leading-8">
-                {formatMatrix(matrixResult)}
-              </pre>
+              <h3 className="mb-3 font-semibold text-indigo-800">ماتریس نتیجه</h3>
+              {renderMatrixDisplay(matrixResult)}
             </div>
           )}
         </section>
 
         {/* LINEAR SYSTEM SOLVER */}
 
-        <section className="space-y-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <section className="space-y-5 rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
           <div>
             <h2 className="text-xl font-bold">۲. حل دستگاه معادلات</h2>
             <p className="mt-1 text-sm text-slate-500">ضرایب مجهول‌ها و مقادیر سمت راست معادلات را وارد کنید.</p>
@@ -428,51 +472,44 @@ export default function App() {
           <div className="space-y-3">
             <h3 className="font-semibold">ضرایب معادلات</h3>
 
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse text-center text-sm">
-                <thead>
-                  <tr className="bg-slate-100">
-                    {Array.from({ length: unknowns }, (_, i) => (
-                      <th key={i} className="p-2">
-                        {variableNames[i]}
-                      </th>
-                    ))}
-                    <th className="p-2 text-indigo-700">مقدار</th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {coefficients.map((row, i) => (
-                    <tr key={i} className="border-b border-slate-100">
-                      {row.map((value, j) => (
-                        <td key={j} className="p-1">
-                          <input
-                            type="number"
-                            step="any"
-                            value={value}
-                            placeholder="0"
-                            onChange={(e) =>
-                              setCoefficients((prev) => prev.map((r, ri) => r.map((v, ci) => (ri === i && ci === j ? e.target.value : v))))
-                            }
-                            className={inputClass}
-                          />
-                        </td>
-                      ))}
-
-                      <td className="p-1">
-                        <input
-                          type="number"
-                          step="any"
-                          value={constants[i]}
-                          placeholder="0"
-                          onChange={(e) => setConstants((prev) => prev.map((v, ri) => (ri === i ? e.target.value : v)))}
-                          className={`${inputClass} border-indigo-200`}
-                        />
-                      </td>
-                    </tr>
+            <div className="space-y-2">
+              {coefficients.map((row, i) => (
+                <div
+                  key={i}
+                  dir="ltr"
+                  className="flex items-center gap-x-1 gap-y-2 flex-wrap rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5"
+                >
+                  {row.map((value, j) => (
+                    <div key={j} className="flex items-center gap-1">
+                      <input
+                        type="text"
+                        inputMode="decimal"
+                        value={value}
+                        placeholder="0"
+                        onChange={(e) => {
+                          if (!isValidNumericInput(e.target.value)) return;
+                          setCoefficients((prev) => prev.map((r, ri) => r.map((v, ci) => (ri === i && ci === j ? e.target.value : v))));
+                        }}
+                        className="w-12 sm:w-16 rounded-lg border border-slate-300 bg-white px-1 py-1.5 text-center text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                      />
+                      <span className="text-sm font-semibold text-indigo-600 select-none">{variableNames[j]}</span>
+                      {j < row.length - 1 && <span className="text-slate-400 select-none px-0.5">+</span>}
+                    </div>
                   ))}
-                </tbody>
-              </table>
+                  <span className="text-slate-500 font-semibold select-none px-1">=</span>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={constants[i]}
+                    placeholder="0"
+                    onChange={(e) => {
+                      if (!isValidNumericInput(e.target.value)) return;
+                      setConstants((prev) => prev.map((v, ri) => (ri === i ? e.target.value : v)));
+                    }}
+                    className="w-12 sm:w-16 rounded-lg border border-indigo-300 bg-white px-1 py-1.5 text-center text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                  />
+                </div>
+              ))}
             </div>
           </div>
 
@@ -488,33 +525,17 @@ export default function App() {
 
               <div>
                 <h4 className="mb-2 text-sm font-semibold">ماتریس ضرایب A</h4>
-                <pre dir="ltr" className="overflow-x-auto text-center text-sm leading-8">
-                  {formatMatrix(parseGrid(coefficients)!)}
-                </pre>
+                {renderMatrixDisplay(parseGrid(coefficients)!)}
               </div>
 
               <div>
                 <h4 className="mb-2 text-sm font-semibold">بردار جواب b</h4>
-                <pre dir="ltr" className="overflow-x-auto text-center text-sm leading-8">
-                  {formatMatrix(constants.map((v) => [Number(v)]))}
-                </pre>
+                {renderMatrixDisplay(constants.map((v) => [Number(v)]))}
               </div>
 
               <div>
                 <h4 className="mb-2 text-sm font-semibold">ماتریس افزوده</h4>
-                <pre dir="ltr" className="overflow-x-auto text-center text-sm leading-8">
-                  {systemResult.augmented
-                    .map((row, i) => {
-                      const left = i === 0 ? '⎡' : i === systemResult.augmented.length - 1 ? '⎣' : '⎢';
-
-                      const right = i === 0 ? '⎤' : i === systemResult.augmented.length - 1 ? '⎦' : '⎥';
-
-                      const values = row.map((v, j) => `${j === unknowns ? '│ ' : ''}${formatNumber(v).padStart(7)}`).join(' ');
-
-                      return `${left} ${values} ${right}`;
-                    })
-                    .join('\n')}
-                </pre>
+                {renderMatrixDisplay(systemResult.augmented, unknowns)}
               </div>
 
               {systemResult.type === 'none' && <div className="rounded-lg bg-red-100 p-4 text-red-700">این دستگاه جواب ندارد.</div>}
@@ -532,7 +553,7 @@ export default function App() {
 
                   <div className="mt-3 space-y-2">
                     {systemResult.solution.map((value, i) => (
-                      <p key={i} dir="ltr" className="font-semibold text-emerald-900">
+                      <p key={i} dir="ltr" className="font-semibold text-emerald-900 tabular-nums">
                         {variableNames[i]} = {formatNumber(value)}
                       </p>
                     ))}
