@@ -27,19 +27,6 @@ const parseGrid = (grid: string[][]): number[][] | null => {
 
 const formatNumber = (value: number) => Number(value.toFixed(6)).toString();
 
-const formatMatrix = (matrix: number[][]) => {
-  return matrix
-    .map((row, i) => {
-      const values = row.map((v) => formatNumber(v).padStart(8)).join(' ');
-
-      const left = i === 0 ? '⎡' : i === matrix.length - 1 ? '⎣' : '⎢';
-      const right = i === 0 ? '⎤' : i === matrix.length - 1 ? '⎦' : '⎥';
-
-      return `${left} ${values} ${right}`;
-    })
-    .join('\n');
-};
-
 // Gauss-Jordan algorithm
 function solveSystem(A: number[][], b: number[]) {
   const rows = A.length;
