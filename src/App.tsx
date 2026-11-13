@@ -1,24 +1,30 @@
-import { useEffect, useState } from 'react';
-import { create, all } from 'mathjs';
+import { useEffect, useState } from "react";
+import { create, all } from "mathjs";
 
 const math = create(all);
 
-type Operation = 'add' | 'subtract' | 'multiply' | 'transpose' | 'det' | 'inverse';
+type Operation = "add" | "subtract" | "multiply" | "transpose" | "det";
 
-const variableNames = ['x', 'y', 'z', 'w', 'v', 'u', 't', 's'];
+const variableNames = ["x", "y", "z", "w", "v", "u", "t", "s"];
 
 // Allow only valid numeric input: digits, leading minus, decimal point
 const isValidNumericInput = (val: string) => /^-?\d*\.?\d*$/.test(val);
 
-const createGrid = (rows: number, cols: number): string[][] => Array.from({ length: rows }, () => Array(cols).fill(''));
+const createGrid = (rows: number, cols: number): string[][] =>
+  Array.from({ length: rows }, () => Array(cols).fill(""));
 
 const resizeGrid = (grid: string[][], rows: number, cols: number) =>
-  Array.from({ length: rows }, (_, i) => Array.from({ length: cols }, (_, j) => grid[i]?.[j] ?? ''));
+  Array.from({ length: rows }, (_, i) =>
+    Array.from({ length: cols }, (_, j) => grid[i]?.[j] ?? ""),
+  );
 
 const parseGrid = (grid: string[][]): number[][] | null => {
   const result = grid.map((row) => row.map(Number));
 
-  if (grid.some((row) => row.some((value) => value.trim() === '')) || result.some((row) => row.some((value) => !Number.isFinite(value)))) {
+  if (
+    grid.some((row) => row.some((value) => value.trim() === "")) ||
+    result.some((row) => row.some((value) => !Number.isFinite(value)))
+  ) {
     return null;
   }
 
@@ -49,7 +55,10 @@ function solveSystem(A: number[][], b: number[]) {
 
     if (Math.abs(augmented[maxRow][col]) < EPSILON) continue;
 
-    [augmented[pivotRow], augmented[maxRow]] = [augmented[maxRow], augmented[pivotRow]];
+    [augmented[pivotRow], augmented[maxRow]] = [
+      augmented[maxRow],
+      augmented[pivotRow],
+    ];
 
     const pivot = augmented[pivotRow][col];
 
@@ -74,21 +83,23 @@ function solveSystem(A: number[][], b: number[]) {
   const rankA = pivots.length;
 
   const inconsistent = augmented.some((row) => {
-    const allZero = row.slice(0, cols).every((value) => Math.abs(value) < EPSILON);
+    const allZero = row
+      .slice(0, cols)
+      .every((value) => Math.abs(value) < EPSILON);
 
     return allZero && Math.abs(row[cols]) >= EPSILON;
   });
 
   if (inconsistent) {
     return {
-      type: 'none' as const,
+      type: "none" as const,
       augmented,
     };
   }
 
   if (rankA < cols) {
     return {
-      type: 'infinite' as const,
+      type: "infinite" as const,
       augmented,
     };
   }
@@ -100,7 +111,7 @@ function solveSystem(A: number[][], b: number[]) {
   });
 
   return {
-    type: 'unique' as const,
+    type: "unique" as const,
     solution,
     augmented,
   };
@@ -108,7 +119,7 @@ function solveSystem(A: number[][], b: number[]) {
 
 export default function App() {
   // Matrix calculator states
-  const [operation, setOperation] = useState<Operation>('add');
+  const [operation, setOperation] = useState<Operation>("add");
 
   const [rowsA, setRowsA] = useState(2);
   const [colsA, setColsA] = useState(2);
@@ -120,7 +131,7 @@ export default function App() {
 
   const [matrixResult, setMatrixResult] = useState<number[][] | null>(null);
   const [scalarResult, setScalarResult] = useState<number | null>(null);
-  const [matrixError, setMatrixError] = useState('');
+  const [matrixError, setMatrixError] = useState("");
 
   // System solver states
   const [equations, setEquations] = useState(3);
@@ -128,11 +139,13 @@ export default function App() {
 
   const [coefficients, setCoefficients] = useState(() => createGrid(3, 3));
 
-  const [constants, setConstants] = useState<string[]>(['', '', '']);
+  const [constants, setConstants] = useState<string[]>(["", "", ""]);
 
-  const [systemResult, setSystemResult] = useState<ReturnType<typeof solveSystem> | null>(null);
+  const [systemResult, setSystemResult] = useState<ReturnType<
+    typeof solveSystem
+  > | null>(null);
 
-  const [systemError, setSystemError] = useState('');
+  const [systemError, setSystemError] = useState("");
 
   // Resize matrices when dimensions change
   useEffect(() => {
@@ -146,28 +159,30 @@ export default function App() {
   useEffect(() => {
     setCoefficients((prev) => resizeGrid(prev, equations, unknowns));
 
-    setConstants((prev) => Array.from({ length: equations }, (_, i) => prev[i] ?? ''));
+    setConstants((prev) =>
+      Array.from({ length: equations }, (_, i) => prev[i] ?? ""),
+    );
   }, [equations, unknowns]);
 
-  const needsB = ['add', 'subtract', 'multiply'].includes(operation);
+  const needsB = ["add", "subtract", "multiply"].includes(operation);
 
   // Matrix operations
   function calculateMatrix() {
-    setMatrixError('');
+    setMatrixError("");
     setMatrixResult(null);
     setScalarResult(null);
 
     const matrixA = parseGrid(A);
 
     if (!matrixA) {
-      setMatrixError('لطفاً تمام خانه‌های ماتریس A را پر کنید.');
+      setMatrixError("لطفاً تمام خانه‌های ماتریس A را پر کنید.");
       return;
     }
 
     const matrixB = needsB ? parseGrid(B) : null;
 
     if (needsB && !matrixB) {
-      setMatrixError('لطفاً تمام خانه‌های ماتریس B را پر کنید.');
+      setMatrixError("لطفاً تمام خانه‌های ماتریس B را پر کنید.");
       return;
     }
 
@@ -175,71 +190,65 @@ export default function App() {
       let result: any;
 
       switch (operation) {
-        case 'det':
+        case "det":
           if (rowsA !== colsA) {
-            throw new Error('دترمینان فقط برای ماتریس مربعی تعریف شده است.');
+            throw new Error("دترمینان فقط برای ماتریس مربعی تعریف شده است.");
           }
 
           setScalarResult(math.det(matrixA));
           return;
 
-        case 'inverse':
-          if (rowsA !== colsA) {
-            throw new Error('معکوس فقط برای ماتریس مربعی تعریف شده است.');
-          }
-
-          if (Math.abs(math.det(matrixA)) < 1e-10) {
-            throw new Error('این ماتریس معکوس ندارد (دترمینان صفر است).');
-          }
-
-          result = math.inv(matrixA).valueOf();
-          break;
-
-        case 'transpose':
+        case "transpose":
           result = math.transpose(matrixA).valueOf();
           break;
 
-        case 'add':
+        case "add":
           if (rowsA !== rowsB || colsA !== colsB) {
-            throw new Error('برای جمع، ابعاد دو ماتریس باید یکسان باشند.');
+            throw new Error("برای جمع، ابعاد دو ماتریس باید یکسان باشند.");
           }
 
           result = math.add(matrixA, matrixB!).valueOf();
           break;
 
-        case 'subtract':
+        case "subtract":
           if (rowsA !== rowsB || colsA !== colsB) {
-            throw new Error('برای تفریق، ابعاد دو ماتریس باید یکسان باشند.');
+            throw new Error("برای تفریق، ابعاد دو ماتریس باید یکسان باشند.");
           }
 
           result = math.subtract(matrixA, matrixB!).valueOf();
           break;
 
-        case 'multiply':
+        case "multiply":
           if (colsA !== rowsB) {
-            throw new Error('تعداد ستون‌های A باید برابر تعداد سطرهای B باشد.');
+            throw new Error("تعداد ستون‌های A باید برابر تعداد سطرهای B باشد.");
           }
 
           result = math.multiply(matrixA, matrixB!).valueOf();
           break;
       }
 
-      setMatrixResult((result as number[][]).map((row) => row.map((value) => Number(value))));
+      setMatrixResult(
+        (result as number[][]).map((row) => row.map((value) => Number(value))),
+      );
     } catch (error) {
-      setMatrixError(error instanceof Error ? error.message : 'خطای محاسباتی');
+      setMatrixError(error instanceof Error ? error.message : "خطای محاسباتی");
     }
   }
 
   // Linear system
   function calculateSystem() {
-    setSystemError('');
+    setSystemError("");
     setSystemResult(null);
 
     const matrix = parseGrid(coefficients);
     const vector = constants.map(Number);
 
-    if (!matrix || constants.some((v) => v.trim() === '') || vector.some((v) => !Number.isFinite(v))) {
-      setSystemError('لطفاً تمام ضرایب و مقادیر سمت راست را وارد کنید.');
+    if (
+      !matrix ||
+      constants.some((v) => v.trim() === "") ||
+      vector.some((v) => !Number.isFinite(v))
+    ) {
+      setSystemError("لطفاً تمام ضرایب و مقادیر سمت راست را وارد کنید.");
       return;
     }
 
@@ -247,27 +256,33 @@ export default function App() {
       const result = solveSystem(matrix, vector);
       setSystemResult(result);
     } catch {
-      setSystemError('در حل دستگاه خطایی رخ داد.');
+      setSystemError("در حل دستگاه خطایی رخ داد.");
     }
   }
 
   const operations = [
-    { value: 'add', label: 'جمع (+)' },
-    { value: 'subtract', label: 'تفریق (-)' },
-    { value: 'multiply', label: 'ضرب (×)' },
-    { value: 'det', label: 'دترمینان' },
-    { value: 'transpose', label: 'ترانهاده' },
-    { value: 'inverse', label: 'معکوس' },
+    { value: "add", label: "جمع (+)" },
+    { value: "subtract", label: "تفریق (-)" },
+    { value: "multiply", label: "ضرب (×)" },
+    { value: "det", label: "دترمینان" },
+    { value: "transpose", label: "ترانهاده" },
   ] as const;
 
   const inputClass =
-    'w-full rounded-lg border border-slate-300 bg-white px-2 py-2 text-center text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100';
+    "w-full rounded-lg border border-slate-300 bg-white px-2 py-2 text-center text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100";
 
-  const selectClass = 'w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 outline-none focus:border-indigo-500';
+  const selectClass =
+    "w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 outline-none focus:border-indigo-500";
 
-  function renderMatrixInput(matrix: string[][], setMatrix: React.Dispatch<React.SetStateAction<string[][]>>) {
+  function renderMatrixInput(
+    matrix: string[][],
+    setMatrix: React.Dispatch<React.SetStateAction<string[][]>>,
+  ) {
     return (
-      <div className="overflow-x-auto rounded-xl border border-slate-200 bg-slate-50 p-3" dir="ltr">
+      <div
+        className="overflow-x-auto rounded-xl border border-slate-200 bg-slate-50 p-3"
+        dir="ltr"
+      >
         <div
           className="grid gap-1.5"
           style={{
@@ -283,19 +298,29 @@ export default function App() {
                 value={value}
                 onChange={(e) => {
                   if (!isValidNumericInput(e.target.value)) return;
-                  setMatrix((prev) => prev.map((r, ri) => r.map((v, ci) => (ri === i && ci === j ? e.target.value : v))));
+                  setMatrix((prev) =>
+                    prev.map((r, ri) =>
+                      r.map((v, ci) =>
+                        ri === i && ci === j ? e.target.value : v,
+                      ),
+                    ),
+                  );
                 }}
                 placeholder="0"
                 className={inputClass}
               />
-            ))
+            )),
           )}
         </div>
       </div>
     );
   }
 
-  function dimensionInput(label: string, value: number, setValue: (value: number) => void) {
+  function dimensionInput(
+    label: string,
+    value: number,
+    setValue: (value: number) => void,
+  ) {
     return (
       <label className="flex flex-col gap-1 text-sm">
         <span className="text-slate-500">{label}</span>
@@ -313,7 +338,6 @@ export default function App() {
     );
   }
 
-  // FIX: Render matrix as an HTML table instead of <pre> to avoid RTL/LTR issues
   function renderMatrixDisplay(matrix: number[][], augmentedSplitAt?: number) {
     return (
       <div dir="ltr" className="overflow-x-auto">
@@ -322,28 +346,36 @@ export default function App() {
             {matrix.map((row, i) => {
               const isFirst = i === 0;
               const isLast = i === matrix.length - 1;
-              const bracketLeft = isFirst ? '⎡' : isLast ? '⎣' : '⎢';
-              const bracketRight = isFirst ? '⎤' : isLast ? '⎦' : '⎥';
+              const bracketLeft = isFirst ? "⎡" : isLast ? "⎣" : "⎢";
+              const bracketRight = isFirst ? "⎤" : isLast ? "⎦" : "⎥";
               return (
                 <tr key={i}>
-                  <td className="select-none px-1 text-slate-400 text-lg leading-8">{bracketLeft}</td>
+                  <td className="select-none px-1 text-slate-400 text-lg leading-8">
+                    {bracketLeft}
+                  </td>
                   {row.map((v, j) => (
                     <>
-                      {augmentedSplitAt !== undefined && j === augmentedSplitAt && (
-                        <td key={`sep-${j}`} className="select-none px-1 text-slate-400 font-bold">
-                          │
-                        </td>
-                      )}
+                      {augmentedSplitAt !== undefined &&
+                        j === augmentedSplitAt && (
+                          <td
+                            key={`sep-${j}`}
+                            className="select-none px-1 text-slate-400 font-bold"
+                          >
+                            │
+                          </td>
+                        )}
                       <td
                         key={j}
-                        className={`px-2 py-1 text-right leading-8 tabular-nums ${v < 0 ? 'text-rose-600' : ''}`}
-                        style={{ minWidth: '3.5rem' }}
+                        className={`px-2 py-1 text-right leading-8 tabular-nums ${v < 0 ? "text-rose-600" : ""}`}
+                        style={{ minWidth: "3.5rem" }}
                       >
                         {formatNumber(v)}
                       </td>
                     </>
                   ))}
-                  <td className="select-none px-1 text-slate-400 text-lg leading-8">{bracketRight}</td>
+                  <td className="select-none px-1 text-slate-400 text-lg leading-8">
+                    {bracketRight}
+                  </td>
                 </tr>
               );
             })}
@@ -354,12 +386,21 @@ export default function App() {
   }
 
   return (
-    <main dir="rtl" className="min-h-screen bg-slate-100 px-3 sm:px-4 py-6 sm:py-10 text-slate-800">
+    <main
+      dir="rtl"
+      className="min-h-screen bg-slate-100 px-3 sm:px-4 py-6 sm:py-10 text-slate-800"
+    >
       <div className="mx-auto max-w-4xl space-y-8">
         <header className="text-center">
-          <h1 className="text-3xl font-bold text-indigo-700">وبسایت ماتریس ها</h1>
-          <h2 className="text-2xl font-bold text-fuchsia-600">محمد امین شیخی</h2>
-          <p className="mt-2 text-sm text-slate-500">ماشین حساب ماتریس ها و حل دستگاه معادلات جبرخطی</p>
+          <h1 className="text-3xl font-bold text-indigo-700">
+            وبسایت ماتریس ها
+          </h1>
+          <h2 className="text-2xl font-bold text-fuchsia-600">
+            محمد امین شیخی
+          </h2>
+          <p className="mt-2 text-sm text-slate-500">
+            ماشین حساب ماتریس ها و حل دستگاه معادلات جبرخطی
+          </p>
         </header>
 
         {/* MATRIX CALCULATOR */}
@@ -367,7 +408,9 @@ export default function App() {
         <section className="space-y-5 rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
           <div>
             <h2 className="text-xl font-bold">۱. عملیات ماتریسی</h2>
-            <p className="mt-1 text-sm text-slate-500">عملیات موردنظر خود را انتخاب کنید.</p>
+            <p className="mt-1 text-sm text-slate-500">
+              عملیات موردنظر خود را انتخاب کنید.
+            </p>
           </div>
 
           <label className="block space-y-2">
@@ -378,7 +421,7 @@ export default function App() {
                 setOperation(e.target.value as Operation);
                 setMatrixResult(null);
                 setScalarResult(null);
-                setMatrixError('');
+                setMatrixError("");
               }}
               className={selectClass}
             >
@@ -390,15 +433,17 @@ export default function App() {
             </select>
           </label>
 
-          <div className={`grid gap-5 ${needsB ? 'md:grid-cols-2' : 'grid-cols-1'}`}>
+          <div
+            className={`grid gap-5 ${needsB ? "md:grid-cols-2" : "grid-cols-1"}`}
+          >
             {/* Matrix A */}
 
             <div className="space-y-3">
               <h3 className="font-semibold">ماتریس A</h3>
 
               <div className="grid grid-cols-2 gap-3">
-                {dimensionInput('تعداد سطر', rowsA, setRowsA)}
-                {dimensionInput('تعداد ستون', colsA, setColsA)}
+                {dimensionInput("تعداد سطر", rowsA, setRowsA)}
+                {dimensionInput("تعداد ستون", colsA, setColsA)}
               </div>
 
               {renderMatrixInput(A, setA)}
@@ -411,8 +456,8 @@ export default function App() {
                 <h3 className="font-semibold">ماتریس B</h3>
 
                 <div className="grid grid-cols-2 gap-3">
-                  {dimensionInput('تعداد سطر', rowsB, setRowsB)}
-                  {dimensionInput('تعداد ستون', colsB, setColsB)}
+                  {dimensionInput("تعداد سطر", rowsB, setRowsB)}
+                  {dimensionInput("تعداد ستون", colsB, setColsB)}
                 </div>
 
                 {renderMatrixInput(B, setB)}
@@ -420,16 +465,26 @@ export default function App() {
             )}
           </div>
 
-          <button onClick={calculateMatrix} className="w-full rounded-xl bg-indigo-600 py-3 font-semibold text-white transition hover:bg-indigo-700">
+          <button
+            onClick={calculateMatrix}
+            className="w-full rounded-xl bg-indigo-600 py-3 font-semibold text-white transition hover:bg-indigo-700"
+          >
             محاسبه
           </button>
 
-          {matrixError && <p className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{matrixError}</p>}
+          {matrixError && (
+            <p className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
+              {matrixError}
+            </p>
+          )}
 
           {scalarResult !== null && (
             <div className="rounded-xl bg-indigo-50 p-4">
               <h3 className="font-semibold text-indigo-800">نتیجه دترمینان</h3>
-              <p dir="ltr" className="mt-3 text-center text-2xl font-bold tabular-nums">
+              <p
+                dir="ltr"
+                className="mt-3 text-center text-2xl font-bold tabular-nums"
+              >
                 {formatNumber(scalarResult)}
               </p>
             </div>
@@ -437,7 +492,9 @@ export default function App() {
 
           {matrixResult && (
             <div className="rounded-xl bg-indigo-50 p-4">
-              <h3 className="mb-3 font-semibold text-indigo-800">ماتریس نتیجه</h3>
+              <h3 className="mb-3 font-semibold text-indigo-800">
+                ماتریس نتیجه
+              </h3>
               {renderMatrixDisplay(matrixResult)}
             </div>
           )}
@@ -448,12 +505,14 @@ export default function App() {
         <section className="space-y-5 rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
           <div>
             <h2 className="text-xl font-bold">۲. حل دستگاه معادلات</h2>
-            <p className="mt-1 text-sm text-slate-500">ضرایب مجهول‌ها و مقادیر سمت راست معادلات را وارد کنید.</p>
+            <p className="mt-1 text-sm text-slate-500">
+              ضرایب مجهول‌ها و مقادیر سمت راست معادلات را وارد کنید.
+            </p>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            {dimensionInput('تعداد معادلات', equations, setEquations)}
-            {dimensionInput('تعداد مجهول‌ها', unknowns, setUnknowns)}
+            {dimensionInput("تعداد معادلات", equations, setEquations)}
+            {dimensionInput("تعداد مجهول‌ها", unknowns, setUnknowns)}
           </div>
 
           <div className="space-y-3">
@@ -475,15 +534,29 @@ export default function App() {
                         placeholder="0"
                         onChange={(e) => {
                           if (!isValidNumericInput(e.target.value)) return;
-                          setCoefficients((prev) => prev.map((r, ri) => r.map((v, ci) => (ri === i && ci === j ? e.target.value : v))));
+                          setCoefficients((prev) =>
+                            prev.map((r, ri) =>
+                              r.map((v, ci) =>
+                                ri === i && ci === j ? e.target.value : v,
+                              ),
+                            ),
+                          );
                         }}
                         className="w-12 sm:w-16 rounded-lg border border-slate-300 bg-white px-1 py-1.5 text-center text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
                       />
-                      <span className="text-sm font-semibold text-indigo-600 select-none">{variableNames[j]}</span>
-                      {j < row.length - 1 && <span className="text-slate-400 select-none px-0.5">+</span>}
+                      <span className="text-sm font-semibold text-indigo-600 select-none">
+                        {variableNames[j]}
+                      </span>
+                      {j < row.length - 1 && (
+                        <span className="text-slate-400 select-none px-0.5">
+                          +
+                        </span>
+                      )}
                     </div>
                   ))}
-                  <span className="text-slate-500 font-semibold select-none px-1">=</span>
+                  <span className="text-slate-500 font-semibold select-none px-1">
+                    =
+                  </span>
                   <input
                     type="text"
                     inputMode="decimal"
@@ -491,7 +564,9 @@ export default function App() {
                     placeholder="0"
                     onChange={(e) => {
                       if (!isValidNumericInput(e.target.value)) return;
-                      setConstants((prev) => prev.map((v, ri) => (ri === i ? e.target.value : v)));
+                      setConstants((prev) =>
+                        prev.map((v, ri) => (ri === i ? e.target.value : v)),
+                      );
                     }}
                     className="w-12 sm:w-16 rounded-lg border border-indigo-300 bg-white px-1 py-1.5 text-center text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
                   />
@@ -500,11 +575,18 @@ export default function App() {
             </div>
           </div>
 
-          <button onClick={calculateSystem} className="w-full rounded-xl bg-indigo-600 py-3 font-semibold text-white transition hover:bg-indigo-700">
+          <button
+            onClick={calculateSystem}
+            className="w-full rounded-xl bg-indigo-600 py-3 font-semibold text-white transition hover:bg-indigo-700"
+          >
             حل دستگاه
           </button>
 
-          {systemError && <p className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{systemError}</p>}
+          {systemError && (
+            <p className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
+              {systemError}
+            </p>
+          )}
 
           {systemResult && (
             <div className="space-y-5 rounded-xl bg-slate-50 p-4">
@@ -525,22 +607,34 @@ export default function App() {
                 {renderMatrixDisplay(systemResult.augmented, unknowns)}
               </div>
 
-              {systemResult.type === 'none' && <div className="rounded-lg bg-red-100 p-4 text-red-700">این دستگاه جواب ندارد.</div>}
-
-              {systemResult.type === 'infinite' && (
-                <div className="rounded-lg bg-amber-100 p-4 text-amber-800">
-                  این دستگاه بی‌نهایت جواب دارد.
-                  <p className="mt-1 text-sm">تعداد مجهول‌ها بیشتر از رتبه ماتریس ضرایب است.</p>
+              {systemResult.type === "none" && (
+                <div className="rounded-lg bg-red-100 p-4 text-red-700">
+                  این دستگاه جواب ندارد.
                 </div>
               )}
 
-              {systemResult.type === 'unique' && (
+              {systemResult.type === "infinite" && (
+                <div className="rounded-lg bg-amber-100 p-4 text-amber-800">
+                  این دستگاه بی‌نهایت جواب دارد.
+                  <p className="mt-1 text-sm">
+                    تعداد مجهول‌ها بیشتر از رتبه ماتریس ضرایب است.
+                  </p>
+                </div>
+              )}
+
+              {systemResult.type === "unique" && (
                 <div className="rounded-lg bg-emerald-100 p-4">
-                  <h4 className="font-bold text-emerald-800">جواب یکتای دستگاه</h4>
+                  <h4 className="font-bold text-emerald-800">
+                    جواب یکتای دستگاه
+                  </h4>
 
                   <div className="mt-3 space-y-2">
                     {systemResult.solution.map((value, i) => (
-                      <p key={i} dir="ltr" className="font-semibold text-emerald-900 tabular-nums">
+                      <p
+                        key={i}
+                        dir="ltr"
+                        className="font-semibold text-emerald-900 tabular-nums"
+                      >
                         {variableNames[i]} = {formatNumber(value)}
                       </p>
                     ))}
@@ -562,7 +656,9 @@ export default function App() {
           </a>
         </div>
 
-        <footer className="pb-4 text-center text-xs text-slate-400">Built with React, TypeScript, Tailwind CSS & Math.js</footer>
+        <footer className="pb-4 text-center text-xs text-slate-400">
+          Built with React, TypeScript, Tailwind CSS & Math.js
+        </footer>
       </div>
     </main>
   );
